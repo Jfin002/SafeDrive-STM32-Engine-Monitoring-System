@@ -27,25 +27,25 @@ To design a real-time embedded system that:
 
 ### 🔹 OLED Display (SSD1306)
 
-<img width="800" height="700" alt="image" src="https://github.com/user-attachments/assets/6894d273-9411-46fd-88a7-ce71ba52501e" />
+<img width="225" height="225" alt="image" src="https://github.com/user-attachments/assets/b6835e59-e203-4c14-9657-ce8871ad412c" />
 
 ### 🔹 Servo Motor (SG90)
 
-<img width="1000" height="891" alt="image" src="https://github.com/user-attachments/assets/c3b1b84d-f5c1-4465-ac8a-107626fb3270" />
+<img width="255" height="255" alt="image" src="https://github.com/user-attachments/assets/c3b1b84d-f5c1-4465-ac8a-107626fb3270" />
 
 ### 🔹 DHT11 Temperature Sensor
 
-<img width="1000" height="1000" alt="image" src="https://github.com/user-attachments/assets/09707521-22a9-4dc2-adb3-e60a27a019bb" />
+<img width="255" height="255" alt="image" src="https://github.com/user-attachments/assets/09707521-22a9-4dc2-adb3-e60a27a019bb" />
 
 ### 🔹 Buzzer + LED
 
-<img width="1416" height="809" alt="image" src="https://github.com/user-attachments/assets/93eec624-8d65-4a50-9f3d-9da5579bbef9" />
-<img width="1000" height="1000" alt="image" src="https://github.com/user-attachments/assets/0e27209c-7f96-4704-9a21-97ff125aa4bd" />
+<img width="255" height="255" alt="image" src="https://github.com/user-attachments/assets/93eec624-8d65-4a50-9f3d-9da5579bbef9" />
+<img width="255" height="255" alt="image" src="https://github.com/user-attachments/assets/0e27209c-7f96-4704-9a21-97ff125aa4bd" />
 
 ### 🔹 Push Button & Joystick
 
-<img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/b14fffaf-6833-49ac-9c31-d643eea40b95" />
-<img width="1080" height="1080" alt="image" src="https://github.com/user-attachments/assets/34800fa0-03a0-4c3f-afec-5c568b4f8662" />
+<img width="255" height="255" alt="image" src="https://github.com/user-attachments/assets/b14fffaf-6833-49ac-9c31-d643eea40b95" />
+<img width="255" height="255" alt="image" src="https://github.com/user-attachments/assets/34800fa0-03a0-4c3f-afec-5c568b4f8662" />
 
 ---
 
