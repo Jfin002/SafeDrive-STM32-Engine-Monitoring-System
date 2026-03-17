@@ -65,7 +65,7 @@ To design a real-time embedded system that:
 ---
 
 ## 🖼️ Hardware Setup
-<img width="1200" height="800" alt="image" src="https://github.com/user-attachments/assets/0d331718-65ec-4f52-868a-6b73fbe8ab8e" />
+![WhatsApp Image 2026-03-17 at 12 05 49 PM](https://github.com/user-attachments/assets/8875ffaf-336f-4a40-ba8a-a507dc2254d4)
 
 
 ---
