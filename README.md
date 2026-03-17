@@ -49,7 +49,7 @@ To design a real-time embedded system that:
 
 ---
 
-## 🔌 Connections
+## Connections
 
 | Component | Pin |
 |----------|-----|
@@ -64,13 +64,14 @@ To design a real-time embedded system that:
 
 ---
 
-## 🖼️ Hardware Setup
-![WhatsApp Image 2026-03-17 at 12 05 49 PM](https://github.com/user-attachments/assets/8875ffaf-336f-4a40-ba8a-a507dc2254d4)
+## Hardware Setup
+![WhatsApp Image 2026-03-17 at 12 10 06 PM](https://github.com/user-attachments/assets/4f5adc25-a5d0-4f8b-9652-e8cd620a63f7)
+
 
 
 ---
 
-## ⚙️ Working Principle
+## Working Principle
 
 1. System powers ON → Displays **SAFE DRIVE**
 2. Waits for **key input (joystick)**
@@ -92,7 +93,7 @@ To design a real-time embedded system that:
 
 ---
 
-## 🛠️ Implementation Steps
+## Implementation Steps
 
 1. GPIO configuration (LED, buzzer, button)
 2. I2C setup for OLED
@@ -107,7 +108,7 @@ To design a real-time embedded system that:
 
 ---
 
-## ⚠️ Challenges Faced
+## Challenges Faced
 
 - Servo not working due to insufficient current
 - OLED text flickering
@@ -129,7 +130,7 @@ To design a real-time embedded system that:
 
 ---
 
-## 💡 Future Improvements
+## Future Improvements
 
 - Replace DHT11 with more accurate sensor (LM35 / DS18B20)
 - Add EEPROM logging for fault history
@@ -138,7 +139,7 @@ To design a real-time embedded system that:
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Jeffin Paul**  
 Embedded Systems Engineer (Aspiring)
