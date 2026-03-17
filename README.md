@@ -25,33 +25,27 @@ To design a real-time embedded system that:
 
 <img width="225" height="225" alt="image" src="https://github.com/user-attachments/assets/422c0853-2825-4e3f-9a90-ebba22e6dc27" />
 
-
-
 ### 🔹 OLED Display (SSD1306)
 
-https://docs.sunfounder.com/projects/elite-explorer-kit/en/latest/_images/oled.png
+<img width="800" height="700" alt="image" src="https://github.com/user-attachments/assets/6894d273-9411-46fd-88a7-ce71ba52501e" />
 
 ### 🔹 Servo Motor (SG90)
 
-https://cdn11.bigcommerce.com/s-brqw2bd7p4/images/stencil/1280x1280/products/29375/28666/ELMOTOR.SG90.02-D.MR__63032.1709947494.jpg?c=1
-
+<img width="1000" height="891" alt="image" src="https://github.com/user-attachments/assets/c3b1b84d-f5c1-4465-ac8a-107626fb3270" />
 
 ### 🔹 DHT11 Temperature Sensor
 
-https://kernelmasters.com/wp-content/uploads/2025/11/201811131511263384442.jpg
-
+<img width="1000" height="1000" alt="image" src="https://github.com/user-attachments/assets/09707521-22a9-4dc2-adb3-e60a27a019bb" />
 
 ### 🔹 Buzzer + LED
 
-https://europe1.discourse-cdn.com/arduino/original/4X/8/0/c/80cba55c39ab1f531e5c6d3776fc1b37fe743716.jpeg
-https://5.imimg.com/data5/SELLER/Default/2022/11/LB/PF/PN/28950456/r1278392-01-1000x1000.jpg
-
+<img width="1416" height="809" alt="image" src="https://github.com/user-attachments/assets/93eec624-8d65-4a50-9f3d-9da5579bbef9" />
+<img width="1000" height="1000" alt="image" src="https://github.com/user-attachments/assets/0e27209c-7f96-4704-9a21-97ff125aa4bd" />
 
 ### 🔹 Push Button & Joystick
 
-https://ibots.in/wp-content/uploads/2024/02/z1-7.webp
-https://static-01.daraz.com.bd/p/01cca905c820534e2e8ec797954c5134.jpg
-
+<img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/b14fffaf-6833-49ac-9c31-d643eea40b95" />
+<img width="1080" height="1080" alt="image" src="https://github.com/user-attachments/assets/34800fa0-03a0-4c3f-afec-5c568b4f8662" />
 
 ---
 
