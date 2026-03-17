@@ -45,7 +45,7 @@ To design a real-time embedded system that:
 ### 🔹 Push Button & Joystick
 
 <img width="255" height="255" alt="image" src="https://github.com/user-attachments/assets/b14fffaf-6833-49ac-9c31-d643eea40b95" />
-<img width="255" height="255" alt="image" src="https://github.com/user-attachments/assets/34800fa0-03a0-4c3f-afec-5c568b4f8662" />
+<img width="185" height="185" alt="image" src="https://github.com/user-attachments/assets/34800fa0-03a0-4c3f-afec-5c568b4f8662" />
 
 ---
 
