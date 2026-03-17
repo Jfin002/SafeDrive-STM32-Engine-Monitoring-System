@@ -65,7 +65,7 @@ To design a real-time embedded system that:
 ---
 
 ## 🖼️ Hardware Setup
-<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/0d331718-65ec-4f52-868a-6b73fbe8ab8e" />
+<img width="1200" height="800" alt="image" src="https://github.com/user-attachments/assets/0d331718-65ec-4f52-868a-6b73fbe8ab8e" />
 
 
 ---
