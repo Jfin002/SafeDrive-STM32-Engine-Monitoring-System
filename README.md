@@ -23,7 +23,8 @@ To design a real-time embedded system that:
 
 ### 🔹 STM32F411VET6
 
-[https://cdn1.botland.store/95624-large_default/stm32f411e-disco-discovery-stm32f411e-discovery.jpg](https://botland.store/stm32-discovery/3563-stm32f411e-disco-discovery-stm32f411e-discovery-5904422365028.html)
+<img width="225" height="225" alt="image" src="https://github.com/user-attachments/assets/422c0853-2825-4e3f-9a90-ebba22e6dc27" />
+
 
 
 ### 🔹 OLED Display (SSD1306)
