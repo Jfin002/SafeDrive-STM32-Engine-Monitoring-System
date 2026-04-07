@@ -1,0 +1,1249 @@
+i2c.h:
+
+# ifndef __I2C_H
+#define __I2C_H
+
+#include "stm32f411xe.h"
+#include <stdint.h>
+
+void I2C1_Init(void);
+void I2C_Write(uint8_t addr, uint8_t control, uint8_t data);
+
+#endif
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+i2c.c:
+
+#include "i2c.h"
+
+void I2C1_Init(void)
+{
+    RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+
+    /* PB8 SCL , PB9 SDA */
+
+    GPIOB->MODER &= ~((3U<<(8*2)) | (3U<<(9*2)));
+    GPIOB->MODER |=  ((2U<<(8*2)) | (2U<<(9*2)));
+
+    GPIOB->AFR[1] &= ~((0xF<<0) | (0xF<<4));
+    GPIOB->AFR[1] |=  ((4U<<0) | (4U<<4));
+
+    GPIOB->OTYPER |= (1U<<8) | (1U<<9);
+    GPIOB->PUPDR  |= (1U<<(8*2)) | (1U<<(9*2));
+
+    I2C1->CR2   = 16;
+    I2C1->CCR   = 80;
+    I2C1->TRISE = 17;
+
+    I2C1->CR1 |= I2C_CR1_PE;
+}
+
+void I2C_Write(uint8_t addr, uint8_t control, uint8_t data)
+{
+    while(I2C1->SR2 & I2C_SR2_BUSY);
+
+    I2C1->CR1 |= I2C_CR1_START;
+
+    while(!(I2C1->SR1 & I2C_SR1_SB));
+
+    I2C1->DR = addr;
+
+    while(!(I2C1->SR1 & I2C_SR1_ADDR));
+
+    (void)I2C1->SR2;
+
+    I2C1->DR = control;
+
+    while(!(I2C1->SR1 & I2C_SR1_TXE));
+
+    I2C1->DR = data;
+
+    while(!(I2C1->SR1 & I2C_SR1_BTF));
+
+    I2C1->CR1 |= I2C_CR1_STOP;
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+button.h:
+
+#ifndef BUTTON_H
+#define BUTTON_H
+
+#include "stm32f411xe.h"
+#include <stdint.h>
+
+void Button_Init(void);
+uint8_t Button_Pressed(void);
+
+#endif
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+button.c:
+
+#include "button.h"
+
+void Button_Init(void)
+{
+    /* Enable GPIOC clock */
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+
+    /* PC13 input */
+    GPIOC->MODER &= ~(3<<(13*2));
+
+    /* pull-up resistor */
+    GPIOC->PUPDR &= ~(3<<(13*2));
+    GPIOC->PUPDR |=  (1<<(13*2));
+}
+
+static void delay_ms(uint32_t ms)
+{
+    for(uint32_t i=0;i<ms*4000;i++)
+        __NOP();
+}
+
+uint8_t Button_Pressed(void)
+{
+    if(!(GPIOC->IDR & (1<<13)))
+    {
+        delay_ms(50);
+
+        if(!(GPIOC->IDR & (1<<13)))
+        {
+            while(!(GPIOC->IDR & (1<<13)));
+            return 1;
+        }
+    }
+
+    return 0;
+}
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+buzzer.h:
+
+#ifndef BUZZER_H
+#define BUZZER_H
+
+#include "stm32f4xx.h"
+
+#define BUZZER_PIN 13
+
+void Buzzer_Init(void);
+void Buzzer_On(void);
+void Buzzer_Off(void);
+void Buzzer_Toggle(void);
+
+#endif
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+buzzer.c:
+
+#include "buzzer.h"
+
+/* Initialize buzzer GPIO */
+void Buzzer_Init(void)
+{
+    /* Enable GPIOD clock */
+	RCC->AHB1ENR |= (1<<3);
+
+    /* Clear mode bits for PD13 */
+    GPIOD->MODER &= ~(3U << (BUZZER_PIN * 2));
+
+    /* Set PD13 as output */
+    GPIOD->MODER |= (1U << (BUZZER_PIN * 2));
+}
+
+/* Turn buzzer ON */
+void Buzzer_On(void)
+{
+    GPIOD->ODR |= (1U << BUZZER_PIN);
+}
+
+/* Turn buzzer OFF */
+void Buzzer_Off(void)
+{
+    GPIOD->ODR &= ~(1U << BUZZER_PIN);
+}
+
+/* Toggle buzzer */
+void Buzzer_Toggle(void)
+{
+    GPIOD->ODR ^= (1U << BUZZER_PIN);
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+dht11.h:
+
+#ifndef DHT11_H
+#define DHT11_H
+
+#include "stm32f411xe.h"
+#include <stdint.h>
+
+void DHT11_Init(void);
+uint8_t DHT11_ReadTemperature(void);
+
+#endif
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+dht11.c:
+
+#include "dht11.h"
+
+#define DHT_PORT GPIOB
+#define DHT_PIN 5
+
+void delay_us(uint32_t us)
+{
+    for(uint32_t i=0;i<us*16;i++)
+        __NOP();
+}
+
+void DHT11_Init(void)
+{
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+
+    /* PB5 input */
+    DHT_PORT->MODER &= ~(3<<(DHT_PIN*2));
+}
+
+static void set_output(void)
+{
+    DHT_PORT->MODER &= ~(3<<(DHT_PIN*2));
+    DHT_PORT->MODER |=  (1<<(DHT_PIN*2));
+}
+
+static void set_input(void)
+{
+    DHT_PORT->MODER &= ~(3<<(DHT_PIN*2));
+}
+
+uint8_t DHT11_ReadTemperature(void)
+{
+    uint8_t data[5] = {0};
+
+    set_output();
+
+    /* start signal */
+    DHT_PORT->ODR &= ~(1<<DHT_PIN);
+
+    for(volatile int i=0;i<800000;i++);
+
+    DHT_PORT->ODR |= (1<<DHT_PIN);
+
+    delay_us(40);
+
+    set_input();
+
+    while(DHT_PORT->IDR & (1<<DHT_PIN));
+    while(!(DHT_PORT->IDR & (1<<DHT_PIN)));
+    while(DHT_PORT->IDR & (1<<DHT_PIN));
+
+    for(int j=0;j<5;j++)
+    {
+        for(int i=0;i<8;i++)
+        {
+            while(!(DHT_PORT->IDR & (1<<DHT_PIN)));
+
+            delay_us(40);
+
+            if(DHT_PORT->IDR & (1<<DHT_PIN))
+                data[j] |= (1<<(7-i));
+
+            while(DHT_PORT->IDR & (1<<DHT_PIN));
+        }
+    }
+
+    return data[2];
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+gpio.h:
+
+#ifndef GPIO_H
+#define GPIO_H
+
+#include "stm32f4xx.h"
+
+#define LED_PIN 12
+
+void GPIO_Init_LED(void);
+void LED_On(void);
+void LED_Off(void);
+void LED_Toggle(void);
+
+#endif
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+gpio.c:
+
+#include "stm32f411xe.h"
+#include "gpio.h"
+
+void GPIO_Init(void)
+{
+    /* Enable clocks */
+
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+
+    /* LED PD12 */
+
+    GPIOD->MODER &= ~(3<<(12*2));
+    GPIOD->MODER |=  (1<<(12*2));
+
+    /* BUZZER PD13 */
+
+    GPIOD->MODER &= ~(3<<(13*2));
+    GPIOD->MODER |=  (1<<(13*2));
+
+    /* BUTTON PC13 */
+
+    GPIOC->MODER &= ~(3<<(13*2));
+
+    GPIOC->PUPDR &= ~(3<<(13*2));
+    GPIOC->PUPDR |=  (1<<(13*2));
+}
+
+void LED_On(void)
+{
+    GPIOD->ODR |= (1<<12);
+}
+
+void LED_Off(void)
+{
+    GPIOD->ODR &= ~(1<<12);
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+key.h:
+
+#ifndef KEY_H
+#define KEY_H
+
+#include "stm32f411xe.h"
+
+void Key_Init(void);
+uint8_t Key_Detected(void);
+
+#endif
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+key.c:
+
+#include "key.h"
+
+void Key_Init(void)
+{
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+
+    GPIOC->MODER &= ~(3<<(0*2));
+
+    GPIOC->PUPDR &= ~(3<<(0*2));
+    GPIOC->PUPDR |= (1<<(0*2));
+}
+
+uint8_t Key_Detected(void)
+{
+    if(!(GPIOC->IDR & (1<<0)))
+        return 1;
+    else
+        return 0;
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+oled.h:
+
+#ifndef __OLED_H
+#define __OLED_H
+
+#include "i2c.h"
+#include <stdint.h>
+
+#define OLED_ADDR (0x3C << 1)
+
+void OLED_Init(void);
+void OLED_Command(uint8_t cmd);
+void OLED_Data(uint8_t data);
+void OLED_SetCursor(uint8_t page, uint8_t column);
+void OLED_Clear(void);
+void OLED_DrawChar(char c);
+void OLED_Print(char *str);
+void OLED_PrintNum(uint8_t num);
+
+#endif
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+oled.c:
+
+#include "oled.h"
+
+/* Send command */
+void OLED_Command(uint8_t cmd)
+{
+    I2C_Write(OLED_ADDR,0x00,cmd);
+}
+
+/* Send data */
+void OLED_Data(uint8_t data)
+{
+    I2C_Write(OLED_ADDR,0x40,data);
+}
+
+/* Set cursor */
+void OLED_SetCursor(uint8_t page,uint8_t column)
+{
+    OLED_Command(0xB0 + page);
+    OLED_Command(0x00 + (column & 0x0F));
+    OLED_Command(0x10 + (column >> 4));
+}
+
+/* Clear display */
+void OLED_Clear(void)
+{
+    for(uint8_t page=0;page<8;page++)
+    {
+        OLED_SetCursor(page,0);
+
+        for(uint8_t col=0;col<128;col++)
+        {
+            OLED_Data(0x00);
+        }
+    }
+}
+
+/* OLED initialization */
+void OLED_Init(void)
+{
+    for(volatile int i=0;i<100000;i++);
+
+    OLED_Command(0xAE);
+    OLED_Command(0x20);
+    OLED_Command(0x00);
+    OLED_Command(0xB0);
+    OLED_Command(0xC8);
+    OLED_Command(0x00);
+    OLED_Command(0x10);
+    OLED_Command(0x40);
+    OLED_Command(0x81);
+    OLED_Command(0xFF);
+    OLED_Command(0xA1);
+    OLED_Command(0xA6);
+    OLED_Command(0xA8);
+    OLED_Command(0x3F);
+    OLED_Command(0xD3);
+    OLED_Command(0x00);
+    OLED_Command(0xD5);
+    OLED_Command(0xF0);
+    OLED_Command(0xD9);
+    OLED_Command(0x22);
+    OLED_Command(0xDA);
+    OLED_Command(0x12);
+    OLED_Command(0xDB);
+    OLED_Command(0x20);
+    OLED_Command(0x8D);
+    OLED_Command(0x14);
+    OLED_Command(0xAF);
+}
+
+/* 5x7 Font Table A-Z */
+static const uint8_t font5x7[26][5] =
+{
+{0x7C,0x12,0x11,0x12,0x7C}, //A
+{0x7F,0x49,0x49,0x49,0x36}, //B
+{0x3E,0x41,0x41,0x41,0x22}, //C
+{0x7F,0x41,0x41,0x22,0x1C}, //D
+{0x7F,0x49,0x49,0x49,0x41}, //E
+{0x7F,0x09,0x09,0x09,0x01}, //F
+{0x3E,0x41,0x49,0x49,0x7A}, //G
+{0x7F,0x08,0x08,0x08,0x7F}, //H
+{0x41,0x41,0x7F,0x41,0x41}, //I
+{0x20,0x40,0x41,0x3F,0x01}, //J
+{0x7F,0x08,0x14,0x22,0x41}, //K
+{0x7F,0x40,0x40,0x40,0x40}, //L
+{0x7F,0x02,0x04,0x02,0x7F}, //M
+{0x7F,0x04,0x08,0x10,0x7F}, //N
+{0x3E,0x41,0x41,0x41,0x3E}, //O
+{0x7F,0x09,0x09,0x09,0x06}, //P
+{0x3E,0x41,0x51,0x21,0x5E}, //Q
+{0x7F,0x09,0x19,0x29,0x46}, //R
+{0x46,0x49,0x49,0x49,0x31}, //S
+{0x01,0x01,0x7F,0x01,0x01}, //T
+{0x3F,0x40,0x40,0x40,0x3F}, //U
+{0x1F,0x20,0x40,0x20,0x1F}, //V
+{0x7F,0x20,0x18,0x20,0x7F}, //W
+{0x63,0x14,0x08,0x14,0x63}, //X
+{0x03,0x04,0x78,0x04,0x03}, //Y
+{0x61,0x51,0x49,0x45,0x43}  //Z
+};
+
+/* 5x7 Font Table 0-9 */
+static const uint8_t fontDigits[10][5] =
+{
+{0x3E,0x51,0x49,0x45,0x3E}, //0
+{0x00,0x42,0x7F,0x40,0x00}, //1
+{0x62,0x51,0x49,0x49,0x46}, //2
+{0x22,0x49,0x49,0x49,0x36}, //3
+{0x18,0x14,0x12,0x7F,0x10}, //4
+{0x2F,0x49,0x49,0x49,0x31}, //5
+{0x3E,0x49,0x49,0x49,0x32}, //6
+{0x01,0x71,0x09,0x05,0x03}, //7
+{0x36,0x49,0x49,0x49,0x36}, //8
+{0x26,0x49,0x49,0x49,0x3E}  //9
+
+};
+
+/* Draw character */
+void OLED_DrawChar(char c)
+{
+    if(c == ' ')
+    {
+        for(int i=0;i<6;i++)
+            OLED_Data(0x00);
+        return;
+    }
+
+    /* A-Z */
+    if(c >= 'A' && c <= 'Z')
+    {
+        uint8_t index = c - 'A';
+
+        for(int i=0;i<5;i++)
+        {
+            OLED_Data(font5x7[index][i]);
+        }
+
+        OLED_Data(0x00);
+        return;
+    }
+
+    /* 0-9 */
+    if(c >= '0' && c <= '9')
+    {
+        uint8_t index = c - '0';
+
+        for(int i=0;i<5;i++)
+        {
+            OLED_Data(fontDigits[index][i]);
+        }
+
+        OLED_Data(0x00);
+        return;
+    }
+
+    /* Special characters */
+    static const uint8_t fontSpecial[3][5] =
+    {
+    /* : */
+    {0x00,0x36,0x36,0x00,0x00},
+
+    /* ; */
+    {0x00,0x56,0x36,0x00,0x00},
+
+    /* / */
+    {0x20,0x10,0x08,0x04,0x02}
+    };
+
+    /* : */
+    if(c == ':')
+    {
+        for(int i=0;i<5;i++)
+            OLED_Data(fontSpecial[0][i]);
+
+        OLED_Data(0x00);
+        return;
+    }
+
+    /* ; */
+    if(c == ';')
+    {
+        for(int i=0;i<5;i++)
+            OLED_Data(fontSpecial[1][i]);
+
+        OLED_Data(0x00);
+        return;
+    }
+
+    /* / */
+    if(c == '/')
+    {
+        for(int i=0;i<5;i++)
+            OLED_Data(fontSpecial[2][i]);
+
+        OLED_Data(0x00);
+        return;
+    }
+}
+
+/* Print string */
+void OLED_Print(char *str)
+{
+    while(*str)
+    {
+        OLED_DrawChar(*str++);
+    }
+}
+
+void OLED_PrintNum(uint8_t num)
+{
+    uint8_t digits[3];
+    int count = 0;
+
+    if(num >= 100)
+    {
+        digits[count++] = num / 100;
+        num %= 100;
+    }
+
+    if(num >= 10)
+    {
+        digits[count++] = num / 10;
+        num %= 10;
+    }
+
+    digits[count++] = num;
+
+    for(int d = 0; d < count; d++)
+    {
+        for(int i = 0; i < 5; i++)
+        {
+            OLED_Data(fontDigits[digits[d]][i]);
+        }
+
+        OLED_Data(0x00);
+    }
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+RFID not used!!!
+
+
+rfid.h:
+
+#ifndef RFID_H
+#define RFID_H
+
+#include "stm32f4xx_hal.h"
+
+uint8_t RC522_Read(uint8_t reg);
+
+#endif
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+rfid.c:
+
+#include "stm32f411xe.h"
+
+extern uint8_t SPI1_Transfer(uint8_t data);
+
+#define RC522_CS_LOW()  GPIOA->ODR &= ~(1<<4)
+#define RC522_CS_HIGH() GPIOA->ODR |=  (1<<4)
+
+uint8_t RC522_Read(uint8_t reg)
+{
+    uint8_t value;
+
+    RC522_CS_LOW();
+
+    SPI1_Transfer((reg<<1) | 0x80);
+    value = SPI1_Transfer(0x00);
+
+    RC522_CS_HIGH();
+
+    return value;
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+rtc.h:
+
+#ifndef INC_RTC_H_
+#define INC_RTC_H_
+
+#include <stdint.h>
+#include "stm32f4xx.h"
+
+void rtc_init(void);
+
+uint8_t rtc_convert_bcd2dec(uint8_t value);
+uint8_t rtc_convert_dec2bcd(uint8_t value);
+
+uint32_t rtc_date_get_day(void);
+uint32_t rtc_date_get_year(void);
+uint32_t rtc_date_get_month(void);
+
+uint32_t rtc_time_get_second(void);
+uint32_t rtc_time_get_minute(void);
+uint32_t rtc_time_get_hour(void);
+
+#endif /* INC_RTC_H_ */
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+rtc.c:
+
+#include <rtc.h>
+#define PWREN (1U << 28)
+#define CR_DBP (1U << 8)
+#define CSR_LSION (1U << 0)
+#define CSR_LSIRDY (1U << 1)
+#define BDCR_BDRST (1U << 16)
+#define BDCR_RTCEN (1U << 15)
+
+#define RTC_WRITE_PROTECTION_KEY_1 ((uint8_t)0xCAU)
+#define RTC_WRITE_PROTECTION_KEY_2 ((uint8_t)0x53U)
+#define RTC_INIT_MASK 0xFFFFFFFFU
+#define ISR_INITF (1U << 6)
+#define WEEKDAY_WEDNESDAY ((uint8_t)0x03U)
+#define MONTH_FEBRUARY  ((uint8_t)0x02U)
+#define TIME_FORMAT_PM (1U << 22)
+#define CR_FMT (1U << 6)
+#define ISR_RSF (1U << 5)
+#define RTC_ASYNCH_PREDIV ((uint32_t)0x7F)
+#define RTC_SYNCH_PREDIV ((uint32_t)0x00F9)
+
+static void rtc_set_asynch_prescaler(uint32_t AsynchPrescaler)
+{
+ MODIFY_REG(RTC->PRER, RTC_PRER_PREDIV_A, AsynchPrescaler << RTC_PRER_PREDIV_A_Pos);
+}
+
+static void rtc_set_synch_prescaler(uint32_t SynchPrescaler)
+{
+ MODIFY_REG(RTC->PRER, RTC_PRER_PREDIV_S, SynchPrescaler);
+}
+
+void _rtc_enable_init_mode(void)
+{
+ RTC->ISR = RTC_INIT_MASK;
+}
+
+void _rtc_disable_init_mode(void)
+{
+ RTC->ISR = ~RTC_INIT_MASK;
+}
+
+uint8_t _rtc_isActiveflag_init(void)
+{
+ return ((RTC->ISR & ISR_INITF) == ISR_INITF);
+}
+
+uint8_t _rtc_isActiveflag_rs(void)
+{
+ return ((RTC->ISR & ISR_RSF) == ISR_RSF);
+}
+
+static uint8_t rtc_init_seq(void)
+{
+ /* Start init mode */
+ _rtc_enable_init_mode();
+ /* Wait till we are in init mode */
+ while (_rtc_isActiveflag_init() != 1) {}
+ return 1;
+}
+
+static uint8_t wait_for_synchro(void)
+{
+ /* Clear RSF */
+ RTC->ISR &= ~ISR_RSF;
+ /* Wait for registers to synchronize */
+ while (_rtc_isActiveflag_rs() != 1) {}
+ return 1;
+}
+
+static uint8_t exit_init_seq(void)
+{
+ /* Stop init mode */
+ _rtc_disable_init_mode();
+ /* Wait for registers to synchronize */
+ return (wait_for_synchro());
+}
+
+static void rtc_date_config(uint32_t WeekDay, uint32_t Day, uint32_t
+Month, uint32_t Year)
+{
+ register uint32_t temp = 0U;
+ temp = (WeekDay << RTC_DR_WDU_Pos) |\
+ (((Year & 0xF0U) << (RTC_DR_YT_Pos - 4U)) | ((Year & 0x0FU) << RTC_DR_YU_Pos)) |\
+ (((Month & 0xF0U) << (RTC_DR_MT_Pos - 4U)) | ((Month & 0x0FU) << RTC_DR_MU_Pos)) |\
+ (((Day & 0xF0U) << (RTC_DR_DT_Pos - 4U)) | ((Day & 0x0FU) << RTC_DR_DU_Pos));
+ MODIFY_REG(RTC->DR, (RTC_DR_WDU | RTC_DR_MT | RTC_DR_MU | RTC_DR_DT | RTC_DR_DU | RTC_DR_YT | RTC_DR_YU), temp);
+}
+
+static void rtc_time_config(uint32_t Format12_24, uint32_t Hours, uint32_t Minutes, uint32_t Seconds)
+{
+ register uint32_t temp = 0U;
+ temp = Format12_24 |\
+ (((Hours & 0xF0U) << (RTC_TR_HT_Pos - 4U)) | ((Hours & 0x0FU) << RTC_TR_HU_Pos)) |\
+ (((Minutes & 0xF0U) << (RTC_TR_MNT_Pos - 4U)) | ((Minutes & 0x0FU) << RTC_TR_MNU_Pos)) |\
+ (((Seconds & 0xF0U) << (RTC_TR_ST_Pos - 4U)) | ((Seconds & 0x0FU) << RTC_TR_SU_Pos));
+ MODIFY_REG(RTC->TR, (RTC_TR_PM | RTC_TR_HT | RTC_TR_HU | RTC_TR_MNT | RTC_TR_MNU | RTC_TR_ST | RTC_TR_SU), temp);
+}
+
+void rtc_init(void)
+{
+ /* Enable clock access to PWR */
+ RCC->APB1ENR |= PWREN;
+ /* Enable Backup access to config RTC */
+ PWR->CR |= CR_DBP;
+ /* Enable Low Speed Internal (LSI) */
+ RCC->CSR |= CSR_LSION;
+ /* Wait for LSI to be ready */
+ while((RCC->CSR & CSR_LSIRDY) != CSR_LSIRDY) {}
+ /* Force backup domain reset */
+ RCC->BDCR |= BDCR_BDRST;
+ /* Release backup domain reset */
+ RCC->BDCR &= ~BDCR_BDRST;
+ /* Set RTC clock source to LSI */
+ RCC->BDCR &= ~(1U << 8);
+ RCC->BDCR |= (1U << 9);
+ /* Enable the RTC */
+ RCC->BDCR |= BDCR_RTCEN;
+ /* Disable RTC registers write protection */
+ RTC->WPR = RTC_WRITE_PROTECTION_KEY_1;
+ RTC->WPR = RTC_WRITE_PROTECTION_KEY_2;
+ /* Enter the initialization mode */
+ if(rtc_init_seq() != 1)
+ {
+ // Handle initialization failure
+ }
+ /* Set desired date: Friday, December 29th, 2016 */
+ rtc_date_config(
+     WEEKDAY_WEDNESDAY,   // correct weekday
+     rtc_convert_dec2bcd(17),  // day
+     rtc_convert_dec2bcd(3),   // month
+     rtc_convert_dec2bcd(26)   // year (2026 → 26)
+ );
+
+ rtc_time_config(
+     0,                        // AM (0 = AM, TIME_FORMAT_PM for PM)
+     rtc_convert_dec2bcd(10),  // hour
+     rtc_convert_dec2bcd(50),  // minute
+     rtc_convert_dec2bcd(30)   // second
+ );
+ /* Set hour format */
+ RTC->CR |= CR_FMT;
+ /* Set Asynchronous prescaler */
+ rtc_set_asynch_prescaler(RTC_ASYNCH_PREDIV);
+ /* Set Synchronous prescaler */
+ rtc_set_synch_prescaler(RTC_SYNCH_PREDIV);
+ /* Exit the initialization mode */
+ exit_init_seq();
+ /* Enable RTC registers write protection */
+ RTC->WPR = 0xFF;
+}
+
+uint8_t rtc_convert_dec2bcd(uint8_t value)
+{
+ return (uint8_t)((((value) / 10U) << 4U) | ((value) % 10U));
+}
+
+uint8_t rtc_convert_bcd2dec(uint8_t value)
+{
+ return (uint8_t)(((uint8_t)((value) & (uint8_t)0xF0U) >> (uint8_t)0x4U) * 10U + ((value) & (uint8_t)0x0FU));
+}
+
+uint32_t rtc_date_get_day(void)
+{
+ return (uint32_t)((READ_BIT(RTC->DR, (RTC_DR_DT | RTC_DR_DU))) >> RTC_DR_DU_Pos);
+}
+
+uint32_t rtc_date_get_year(void)
+{
+ return (uint32_t)((READ_BIT(RTC->DR, (RTC_DR_YT | RTC_DR_YU))) >> RTC_DR_YU_Pos);
+}
+
+uint32_t rtc_date_get_month(void)
+{
+ return (uint32_t)((READ_BIT(RTC->DR, (RTC_DR_MT | RTC_DR_MU))) >> RTC_DR_MU_Pos);
+}
+
+uint32_t rtc_time_get_second(void)
+{
+ return (uint32_t)(READ_BIT(RTC->TR, (RTC_TR_ST | RTC_TR_SU))>> RTC_TR_SU_Pos);
+}
+
+uint32_t rtc_time_get_minute(void)
+{
+ return (uint32_t)(READ_BIT(RTC->TR, (RTC_TR_MNT | RTC_TR_MNU)) >> RTC_TR_MNU_Pos);
+}
+
+uint32_t rtc_time_get_hour(void)
+{
+ return (uint32_t)((READ_BIT(RTC->TR, (RTC_TR_HT | RTC_TR_HU))) >> RTC_TR_HU_Pos);
+}
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+servo.h:
+
+#ifndef SERVO_H
+#define SERVO_H
+
+#include "stm32f411xe.h"
+
+void Servo_Init(void);
+void Servo_MoveSmooth(uint16_t start,uint16_t end);
+void Servo_180(void);
+
+#endif
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+servo.c:
+
+#include "stm32f411xe.h"
+#include "servo.h"
+
+/*
+ TIM1 CH1 -> PA8
+ PWM:
+ 50Hz (20ms period)
+ 1ms = 0°
+ 1.5ms = 90°
+ 2ms = 180°
+*/
+
+void Servo_Init(void)
+{
+    /* Enable clocks */
+    RCC->AHB1ENR |= (1<<0);   // GPIOA
+    RCC->APB2ENR |= (1<<0);   // TIM1
+
+    /* PA8 -> Alternate Function */
+    GPIOA->MODER &= ~(3<<(8*2));
+    GPIOA->MODER |=  (2<<(8*2));
+
+    /* AF1 (TIM1) */
+    GPIOA->AFR[1] &= ~(0xF<<0);
+    GPIOA->AFR[1] |=  (1<<0);
+
+    /* Timer base config */
+    TIM1->PSC = 16-1;        // 16 MHz /16 = 1 MHz (1us)
+    TIM1->ARR = 20000-1;     // 20ms period
+
+    /* PWM mode 1 */
+    TIM1->CCMR1 &= ~(7<<4);
+    TIM1->CCMR1 |=  (6<<4);
+
+    /* Enable preload */
+    TIM1->CCMR1 |= (1<<3);
+
+    /* Enable output */
+    TIM1->CCER |= (1<<0);
+
+    /* Main output enable */
+    TIM1->BDTR |= (1<<15);
+
+    /* Auto reload preload */
+    TIM1->CR1 |= (1<<7);
+
+    /* Start timer */
+    TIM1->CR1 |= (1<<0);
+
+    /* Default position */
+    Servo_SetAngle(0);
+}
+
+/* Core function */
+void Servo_SetAngle(uint8_t angle)
+{
+    if(angle > 180) angle = 180;
+
+    /* 1000us to 2000us */
+    uint16_t pulse = 1000 + ((angle * 1000) / 180);
+
+    TIM1->CCR1 = pulse;
+}
+
+/* Helper functions */
+void Servo_0(void)
+{
+    Servo_SetAngle(0);
+}
+
+void Servo_90(void)
+{
+    Servo_SetAngle(90);
+}
+
+void Servo_180(void)
+{
+    Servo_SetAngle(180);
+}
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+spi.h:
+
+#ifndef INC_SPI_H_
+#define INC_SPI_H_
+
+#include "stm32f4xx.h"
+#include <stdint.h>
+
+void spi_gpio_init(void);
+void spi1_config(void);
+void spi1_transmit(uint8_t *data,uint32_t size);
+void spi1_receive(uint8_t *data,uint32_t size);
+void cs_enable(void);
+void cs_disable(void);
+
+#endif
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+spi.c:
+
+#include "stm32f411xe.h"
+
+void SPI1_Init(void)
+{
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+    /* CS pin PA4 */
+
+    GPIOA->MODER &= ~(3<<(4*2));
+    GPIOA->MODER |=  (1<<(4*2));
+    GPIOA->ODR |= (1<<4);
+
+    /* SPI pins */
+
+    GPIOA->MODER &= ~((3<<(5*2))|(3<<(6*2))|(3<<(7*2)));
+    GPIOA->MODER |=  ((2<<(5*2))|(2<<(6*2))|(2<<(7*2)));
+
+    GPIOA->AFR[0] &= ~((0xF<<(5*4))|(0xF<<(6*4))|(0xF<<(7*4)));
+    GPIOA->AFR[0] |=  ((5<<(5*4))|(5<<(6*4))|(5<<(7*4)));
+
+    SPI1->CR1 = 0;
+
+    SPI1->CR1 |= SPI_CR1_MSTR;
+    SPI1->CR1 |= SPI_CR1_SSM;
+    SPI1->CR1 |= SPI_CR1_SSI;
+
+    SPI1->CR1 |= SPI_CR1_BR_2 | SPI_CR1_BR_1 | SPI_CR1_BR_0;
+
+    SPI1->CR1 |= SPI_CR1_SPE;
+}
+
+uint8_t SPI1_Transfer(uint8_t data)
+{
+    while(!(SPI1->SR & SPI_SR_TXE));
+
+    SPI1->DR = data;
+
+    while(!(SPI1->SR & SPI_SR_RXNE));
+
+    return SPI1->DR;
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+main.h:
+
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.h
+  * @brief          : Header for main.c file.
+  *                   This file contains the common defines of the application.
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __MAIN_H
+#define __MAIN_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_hal.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Exported types ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
+
+/* USER CODE END ET */
+
+/* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
+
+/* USER CODE END EC */
+
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
+
+/* USER CODE END EM */
+
+/* Exported functions prototypes ---------------------------------------------*/
+void Error_Handler(void);
+
+/* USER CODE BEGIN EFP */
+
+/* USER CODE END EFP */
+
+/* Private defines -----------------------------------------------------------*/
+
+/* USER CODE BEGIN Private defines */
+
+/* USER CODE END Private defines */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __MAIN_H */
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+main.c:
+
+#include <rtc.h>
+#include "stm32f411xe.h"
+#include "oled.h"
+#include "i2c.h"
+#include "gpio.h"
+#include "buzzer.h"
+#include "button.h"
+#include "servo.h"
+#include "key.h"
+#include <stdio.h>
+
+void delay_ms(uint32_t ms)
+{
+    for(uint32_t i=0;i<ms*4000;i++)
+        __NOP();
+}
+
+int main(void)
+{
+    GPIO_Init();
+    I2C1_Init();
+    OLED_Init();
+    Button_Init();
+    Servo_Init();
+    Key_Init();
+    rtc_init();   // RTC initialization
+
+    uint8_t temp;
+
+    char time_buff[20];
+
+    while(1)
+    {
+        /* Idle screen */
+
+        OLED_Clear();
+        OLED_SetCursor(2,30);
+        OLED_Print("SAFE DRIVE");
+
+        OLED_SetCursor(4,30);
+        OLED_Print("INSERT KEY");
+
+        /* Wait for joystick key */
+
+        while(!Key_Detected());
+
+        /* LED + buzzer immediately after key insertion */
+
+        Buzzer_On();
+        delay_ms(150);
+        Buzzer_Off();
+
+        /* ENGINE START */
+
+        OLED_Clear();
+        OLED_SetCursor(2,25);
+        OLED_Print("ENGINE START");
+
+        for(int i=0;i<4;i++)
+        {
+            Servo_180();
+            delay_ms(250);
+        }
+
+        delay_ms(200);
+
+        /* -------- NEW SCREEN -------- */
+
+        OLED_Clear();
+
+        OLED_SetCursor(1,20);
+        OLED_Print("STATUS: RUNNING");
+
+        OLED_SetCursor(3,20);
+        OLED_Print("THRESHOLD: 39");
+
+        OLED_SetCursor(5,20);
+        OLED_Print("TEMP:");
+
+        temp = 25;
+
+        while(temp < 40)
+        {
+            Servo_180();
+
+            /* update only value */
+
+            OLED_SetCursor(5,60);
+            OLED_PrintNum(temp);
+
+            delay_ms(300);
+
+            temp += 2;
+        }
+
+        /* -------- OVERHEAT -------- */
+
+        OLED_Clear();
+
+        OLED_SetCursor(1,10);
+        OLED_Print("ENGINE OVERHEAT");
+
+        OLED_SetCursor(3,10);
+        OLED_Print("SYSTEM SHUTDOWN");
+
+        /* -------- TIMESTAMP -------- */
+
+        uint8_t hour = rtc_convert_bcd2dec(rtc_time_get_hour());
+        uint8_t min  = rtc_convert_bcd2dec(rtc_time_get_minute());
+        uint8_t sec  = rtc_convert_bcd2dec(rtc_time_get_second());
+
+        sprintf(time_buff,"%02d:%02d:%02d",hour,min,sec);
+
+        OLED_SetCursor(5,30);
+        OLED_Print(time_buff);
+
+        /* LED + buzzer stay ON */
+
+        LED_On();
+        Buzzer_On();
+
+        /* SYSTEM OFF */
+
+        OLED_SetCursor(7,30);
+        OLED_Print("PRESS RESET");
+
+        /* wait restart */
+
+        while(!Button_Pressed());
+
+        LED_Off();
+        Buzzer_Off();
+
+        delay_ms(100);
+    }
+}
